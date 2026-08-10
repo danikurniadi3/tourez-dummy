@@ -6,7 +6,6 @@
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Leaflet.js](https://img.shields.io/badge/Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 **TourEZ** adalah platform media sosial pariwisata modern yang menggabungkan kecanggihan **Pengenalan Lokasi Otomatis berbasis AI & Metadata EXIF**, **Gamifikasi Paspor Digital**, **Peta Wisata Interaktif**, serta **Direktori Destinasi Pariwisata Indonesia**. 
 
