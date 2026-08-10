@@ -81,10 +81,10 @@ window.DESTINATIONS = [
     lng: 130.5123,
     rating: 5.0,
     reviewCount: 1890,
-    image: "https://images.unsplash.com/photo-1516690561799-46d8f74df9ab?auto=format&fit=crop&w=1000&q=80",
+    image: "https://images.unsplash.com/photo-1703769605307-395ace742240?q=80&w=1180&auto=format&fit=crop&w=300&q=80",
     gallery: [
-      "https://images.unsplash.com/photo-1516690561799-46d8f74df9ab?auto=format&fit=crop&w=1000&q=80",
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1703769605307-395ace742240?q=80&w=1180&auto=format&fit=crop&w=300&q=80",
+      "https://images.unsplash.com/photo-1703769605307-395ace742240?q=80&w=1180&auto=format&fit=crop&w=300&q=80"
     ],
     openingHours: "24 Jam",
     ticketPrice: "Rp 300.000 (PIN Kartu Pemeliharaan Lingkungan)",
@@ -241,7 +241,7 @@ window.INITIAL_POSTS = [
     },
     destinationId: "rajaampat",
     locationName: "Piaynemo, Raja Ampat",
-    image: "https://images.unsplash.com/photo-1516690561799-46d8f74df9ab?auto=format&fit=crop&w=1000&q=80",
+    image: "https://images.unsplash.com/photo-1703769605307-395ace742240?q=80&w=1180&auto=format&fit=crop&w=300&q=80",
     caption: "Mendaki 300 anak tangga di Piaynemo! Gradasi warna laut biru toska Raja Ampat bener-bener surga dunia. Masuk Bucket List wajib! 🏝️",
     rating: 5,
     likes: 890,
