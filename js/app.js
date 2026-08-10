@@ -1,7 +1,9 @@
-// TourEZ - Main Application Logic & Event Controller
+// TourEZ - Main Application Logic & Event Controller (Material Design UI)
 
 document.addEventListener('DOMContentLoaded', () => {
+  // =============================================
   // App Global State
+  // =============================================
   const state = {
     currentTab: 'feed',
     feedFilter: 'trending',
@@ -12,10 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     leafletMap: null,
     mapMarkers: [],
     selectedDestination: null,
-    pendingUpload: null // Holds photo scan result during Hero Flow
+    pendingUpload: null
   };
 
-  // --- 1. DOM Elements ---
+  // =============================================
+  // 1. DOM Elements
+  // =============================================
   const views = {
     feed: document.getElementById('viewFeed'),
     map: document.getElementById('viewMap'),
@@ -23,8 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     passport: document.getElementById('viewPassport')
   };
 
-  const navItems = document.querySelectorAll('.nav-item');
-  const feedTabs = document.querySelectorAll('.feed-tab-btn');
+  // Desktop tabs (MDC Tab Bar)
+  const desktopTabButtons = document.querySelectorAll('.tourez-main-nav .mdc-tab');
+  // Mobile bottom nav
+  const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+  // Feed filter chips
+  const feedChips = document.querySelectorAll('.feed-chip');
   const searchInput = document.getElementById('searchInput');
   const passportPill = document.getElementById('passportPill');
 
@@ -37,7 +45,50 @@ document.addEventListener('DOMContentLoaded', () => {
     comment: document.getElementById('commentModal')
   };
 
-  // --- 2. Tab Navigation ---
+  // =============================================
+  // 2. Initialize MDC Web Components
+  // =============================================
+  function initMDC() {
+    // Top App Bar
+    const topAppBarEl = document.getElementById('topAppBar');
+    if (topAppBarEl && window.mdc) {
+      window.mdc.topAppBar.MDCTopAppBar.attachTo(topAppBarEl);
+    }
+
+    // Text field (Search)
+    const searchFieldEl = document.getElementById('searchField');
+    if (searchFieldEl && window.mdc) {
+      window.mdc.textField.MDCTextField.attachTo(searchFieldEl);
+    }
+
+    // Snackbar
+    const snackbarEl = document.getElementById('tourezSnackbar');
+    if (snackbarEl && window.mdc) {
+      window._mdcSnackbar = window.mdc.snackbar.MDCSnackbar.attachTo(snackbarEl);
+    }
+
+    // Linear Progress (Radar scan)
+    const progressEl = document.querySelector('.radar-progress');
+    if (progressEl && window.mdc) {
+      const lp = window.mdc.linearProgress.MDCLinearProgress.attachTo(progressEl);
+      lp.open();
+      window._mdcRadarProgress = lp;
+    }
+
+    // MDC Ripple on action elements
+    document.querySelectorAll('.mdc-ripple-surface').forEach(el => {
+      if (window.mdc) window.mdc.ripple.MDCRipple.attachTo(el);
+    });
+
+    // MDC Ripple on chips
+    document.querySelectorAll('.mdc-chip').forEach(el => {
+      if (window.mdc) window.mdc.ripple.MDCRipple.attachTo(el);
+    });
+  }
+
+  // =============================================
+  // 3. Tab Navigation
+  // =============================================
   function switchTab(tabName) {
     if (tabName === 'post') {
       openUploadModal();
@@ -45,35 +96,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     state.currentTab = tabName;
-    navItems.forEach(item => {
-      if (item.dataset.tab === tabName) {
-        item.classList.add('active');
-      } else {
-        item.classList.remove('active');
-      }
+
+    // Update desktop tabs
+    desktopTabButtons.forEach(btn => {
+      const isActive = btn.dataset.tab === tabName;
+      btn.classList.toggle('mdc-tab--active', isActive);
+      btn.setAttribute('aria-selected', isActive);
+      const indicator = btn.querySelector('.mdc-tab-indicator');
+      if (indicator) indicator.classList.toggle('mdc-tab-indicator--active', isActive);
     });
 
+    // Update mobile bottom nav
+    bottomNavItems.forEach(item => {
+      item.classList.toggle('active', item.dataset.tab === tabName);
+    });
+
+    // Switch views
     Object.keys(views).forEach(key => {
-      if (key === tabName) {
-        views[key].classList.add('active');
-      } else {
-        views[key].classList.remove('active');
+      if (views[key]) {
+        views[key].classList.toggle('active', key === tabName);
       }
     });
 
-    // Special Tab Initialization
-    if (tabName === 'map') {
-      initOrUpdateMap();
-    } else if (tabName === 'passport') {
-      renderPassport();
-    } else if (tabName === 'destinations') {
-      renderDestinations();
-    } else if (tabName === 'feed') {
-      renderFeed();
-    }
+    // Special tab initializations
+    if (tabName === 'map') initOrUpdateMap();
+    else if (tabName === 'passport') renderPassport();
+    else if (tabName === 'destinations') renderDestinations();
+    else if (tabName === 'feed') renderFeed();
   }
 
-  navItems.forEach(item => {
+  // Bind desktop tabs
+  desktopTabButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = btn.dataset.tab;
+      if (tab) switchTab(tab);
+    });
+  });
+
+  // Bind mobile bottom nav
+  bottomNavItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = item.dataset.tab;
+      if (tab) switchTab(tab);
+    });
+  });
+
+  // Legacy nav-item support (if any)
+  document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const tab = item.dataset.tab;
@@ -85,12 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
     passportPill.addEventListener('click', () => switchTab('passport'));
   }
 
-  // --- 3. Feed Controller ---
-  feedTabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      feedTabs.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.feedFilter = btn.dataset.filter;
+  // =============================================
+  // 4. Feed Controller
+  // =============================================
+  feedChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      feedChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      state.feedFilter = chip.dataset.filter;
       renderFeed();
     });
   });
@@ -103,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (state.searchQuery) {
       const q = state.searchQuery.toLowerCase();
-      filteredPosts = filteredPosts.filter(p => 
+      filteredPosts = filteredPosts.filter(p =>
         p.locationName.toLowerCase().includes(q) ||
         p.caption.toLowerCase().includes(q) ||
         p.user.name.toLowerCase().includes(q) ||
@@ -113,17 +186,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (filteredPosts.length === 0) {
       feedContainer.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <i class="fa-solid fa-compass" style="font-size: 3rem; margin-bottom: 12px; color: var(--primary-emerald);">
-          </i>
-          <p>Tidak ada unggahan yang sesuai pencarian "${state.searchQuery}".</p>
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--mdc-text-muted);">
+          <span class="material-icons-round" style="font-size: 3.5rem; margin-bottom: 14px; color: var(--mdc-theme-primary); display: block;">explore_off</span>
+          <p class="mdc-typography--body1">Tidak ada unggahan yang sesuai pencarian "<strong>${state.searchQuery}</strong>".</p>
         </div>
       `;
       return;
     }
 
     feedContainer.innerHTML = filteredPosts.map(post => `
-      <div class="post-card" data-post-id="${post.id}">
+      <div class="post-card mdc-card" data-post-id="${post.id}">
+        <!-- Post Header -->
         <div class="post-header">
           <div class="post-user">
             <img src="${post.user.avatar}" class="post-user-avatar" alt="${post.user.name}">
@@ -133,43 +206,53 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
           <div class="post-ai-badge">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> ${post.verifiedBy}
+            <span class="material-icons-round">auto_fix_high</span>
+            ${post.verifiedBy}
           </div>
         </div>
 
+        <!-- Post Image -->
         <div class="post-image-wrap">
           <img src="${post.image}" class="post-image" alt="${post.locationName}" loading="lazy">
           <div class="post-location-tag" onclick="window.viewDestinationDetail('${post.destinationId}')">
-            <i class="fa-solid fa-location-dot"></i> ${post.locationName}
+            <span class="material-icons-round">location_on</span> ${post.locationName}
           </div>
           <div class="post-rating-badge">
-            <i class="fa-solid fa-star"></i> ${post.rating}.0
+            <span class="material-icons-round">star</span> ${post.rating}.0
           </div>
         </div>
 
+        <!-- Post Body -->
         <div class="post-body">
-          <p class="post-caption">${escapeHtml(post.caption)}</p>
+          <p class="post-caption mdc-typography--body2">${escapeHtml(post.caption)}</p>
           <div class="post-actions">
             <div class="action-group">
-              <button class="action-btn ${post.isLiked ? 'liked' : ''}" onclick="window.toggleLikePost('${post.id}')">
-                <i class="fa-${post.isLiked ? 'solid' : 'regular'} fa-heart"></i>
+              <button class="action-btn ${post.isLiked ? 'liked' : ''}" onclick="window.toggleLikePost('${post.id}')" title="Suka">
+                <span class="material-icons-round">${post.isLiked ? 'favorite' : 'favorite_border'}</span>
                 <span>${post.likes}</span>
               </button>
-              <button class="action-btn" onclick="window.openCommentModal('${post.id}')">
-                <i class="fa-regular fa-comment"></i>
+              <button class="action-btn" onclick="window.openCommentModal('${post.id}')" title="Komentar">
+                <span class="material-icons-round">chat_bubble_outline</span>
                 <span>${post.comments.length}</span>
               </button>
-              <button class="action-btn" onclick="window.sharePost('${post.id}')">
-                <i class="fa-regular fa-paper-plane"></i>
+              <button class="action-btn" onclick="window.sharePost('${post.id}')" title="Bagikan">
+                <span class="material-icons-round">send</span>
               </button>
             </div>
             <button class="action-btn ${post.isSaved ? 'saved' : ''}" onclick="window.toggleSavePost('${post.id}')" title="Simpan ke Bucket List">
-              <i class="fa-${post.isSaved ? 'solid' : 'regular'} fa-bookmark"></i>
+              <span class="material-icons-round">${post.isSaved ? 'bookmark' : 'bookmark_border'}</span>
             </button>
           </div>
         </div>
       </div>
     `).join('');
+
+    // Attach MDC Ripple to newly created action buttons
+    if (window.mdc) {
+      feedContainer.querySelectorAll('.mdc-ripple-surface').forEach(el => {
+        window.mdc.ripple.MDCRipple.attachTo(el);
+      });
+    }
   }
 
   window.toggleLikePost = function(postId) {
@@ -197,7 +280,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`🔗 Link postingan berhasil disalin ke clipboard!`);
   };
 
-  // --- 4. Interactive Map Controller ---
+  // =============================================
+  // 5. Interactive Map Controller
+  // =============================================
   function initOrUpdateMap() {
     if (state.leafletMap) {
       state.leafletMap.invalidateSize();
@@ -207,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mapElement = document.getElementById('leafletMap');
     if (!mapElement || typeof L === 'undefined') return;
 
-    // Center of Indonesia (Yogyakarta / Central Java overview)
     state.leafletMap = L.map('leafletMap').setView([-7.7956, 110.3695], 7);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -221,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderMapMarkers() {
     if (!state.leafletMap) return;
 
-    // Clear existing markers
     state.mapMarkers.forEach(m => state.leafletMap.removeLayer(m));
     state.mapMarkers = [];
 
@@ -240,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <img src="${dest.image}" class="map-popup-img" alt="${dest.name}">
           <div class="map-popup-info">
             <div class="map-popup-title">${dest.name}</div>
-            <div class="map-popup-category"><i class="fa-solid fa-tag"></i> ${dest.category} • ⭐ ${dest.rating}</div>
+            <div class="map-popup-category"><span style="font-size:0.8rem">🏷️</span> ${dest.category} • ⭐ ${dest.rating}</div>
             <button class="btn-popup-detail" onclick="window.viewDestinationDetail('${dest.id}')">
               Lihat Detail Destinasi
             </button>
@@ -253,26 +336,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 5. Destination Catalog Controller ---
+  // =============================================
+  // 6. Destination Catalog Controller
+  // =============================================
   function renderDestinations() {
     const grid = document.getElementById('destinationsGrid');
     if (!grid) return;
 
     grid.innerHTML = state.destinations.map(dest => `
-      <div class="dest-card" onclick="window.viewDestinationDetail('${dest.id}')">
+      <div class="dest-card mdc-card" onclick="window.viewDestinationDetail('${dest.id}')">
         <img src="${dest.image}" class="dest-card-img" alt="${dest.name}" loading="lazy">
         <div class="dest-card-content">
-          <div class="dest-card-title">${dest.name}</div>
+          <div class="dest-card-title mdc-typography--subtitle1">${dest.name}</div>
           <div class="dest-card-meta">
-            <i class="fa-solid fa-location-dot" style="color: var(--primary-emerald);"></i> ${dest.locationName}
+            <span class="material-icons-round">location_on</span> ${dest.locationName}
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.8rem; background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 8px;">
-              ${dest.category}
-            </span>
-            <span style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700;">
-              ⭐ ${dest.rating} (${dest.reviewCount})
-            </span>
+          <div class="dest-card-footer">
+            <span class="dest-category-chip">${dest.category}</span>
+            <span class="dest-rating">⭐ ${dest.rating} (${dest.reviewCount})</span>
           </div>
         </div>
       </div>
@@ -284,53 +365,54 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dest) return;
 
     state.selectedDestination = dest;
-    const modal = modals.destDetail;
     const body = document.getElementById('destDetailBody');
 
     body.innerHTML = `
       <div style="position: relative;">
-        <img src="${dest.image}" style="width: 100%; height: 240px; object-fit: cover; border-radius: 16px 16px 0 0;" alt="${dest.name}">
-        <div style="position: absolute; bottom: 12px; left: 16px; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 20px; color: #fff; font-weight: 700; font-size: 0.9rem;">
-          <i class="fa-solid fa-star" style="color: var(--accent-gold);"></i> ${dest.rating} / 5.0 (${dest.reviewCount} ulasan)
+        <img src="${dest.image}" style="width: 100%; height: 240px; object-fit: cover; border-radius: 20px 20px 0 0; display: block;" alt="${dest.name}">
+        <div style="position: absolute; bottom: 12px; left: 16px; background: rgba(0,0,0,0.72); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 20px; color: #fff; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-round" style="font-size: 1rem; color: #FBBF24;">star</span>
+          ${dest.rating} / 5.0 (${dest.reviewCount} ulasan)
         </div>
       </div>
-      <div style="padding: 20px;">
-        <h2 style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 4px;">${dest.name}</h2>
-        <p style="color: var(--primary-emerald); font-weight: 600; font-size: 0.9rem; margin-bottom: 14px;">
-          <i class="fa-solid fa-location-dot"></i> ${dest.locationName}
+      <div style="padding: 22px;">
+        <h2 class="mdc-typography--headline5" style="margin-bottom: 4px;">${dest.name}</h2>
+        <p style="color: var(--mdc-theme-primary); font-weight: 600; font-size: 0.9rem; margin-bottom: 14px; display: flex; align-items: center; gap: 5px;">
+          <span class="material-icons-round" style="font-size: 1rem;">location_on</span> ${dest.locationName}
         </p>
-        
-        <p style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 20px;">${dest.description}</p>
+        <p class="mdc-typography--body1" style="margin-bottom: 20px; color: var(--mdc-theme-on-surface);">${dest.description}</p>
 
-        <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-          <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-regular fa-clock" style="color: var(--accent-cyan);"></i>
+        <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 14px; padding: 16px; margin-bottom: 20px;">
+          <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;" class="mdc-typography--body2">
+            <span class="material-icons-round" style="color: var(--mdc-accent-cyan);">schedule</span>
             <strong>Jam Buka:</strong> ${dest.openingHours}
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-ticket" style="color: var(--accent-gold);"></i>
+          <div style="display: flex; align-items: center; gap: 8px;" class="mdc-typography--body2">
+            <span class="material-icons-round" style="color: var(--mdc-accent-gold);">local_activity</span>
             <strong>Tiket Masuk:</strong> ${dest.ticketPrice}
           </div>
         </div>
 
-        <h4 style="font-size: 1rem; margin-bottom: 10px; color: var(--text-main);"><i class="fa-solid fa-lightbulb" style="color: var(--accent-gold);"></i> Tips Pengunjung:</h4>
-        <ul style="padding-left: 20px; margin-bottom: 24px; color: var(--text-muted); font-size: 0.88rem;">
+        <h4 class="mdc-typography--subtitle2" style="margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+          <span class="material-icons-round" style="color: var(--mdc-accent-gold);">lightbulb</span> Tips Pengunjung:
+        </h4>
+        <ul style="padding-left: 20px; margin-bottom: 24px; color: var(--mdc-text-muted); font-size: 0.88rem;">
           ${dest.tips.map(t => `<li style="margin-bottom: 6px;">${t}</li>`).join('')}
         </ul>
 
-        <div style="display: flex; gap: 12px;">
-          <button class="btn-primary" style="flex: 1;" onclick="window.openGoogleMapsRoute(${dest.lat}, ${dest.lng})">
-            <i class="fa-solid fa-route"></i> Petunjuk Arah (Maps)
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-primary" style="flex: 1; min-width: 140px;" onclick="window.openGoogleMapsRoute(${dest.lat}, ${dest.lng})">
+            <span class="material-icons-round">directions</span> Petunjuk Arah
           </button>
-          <button class="btn-primary" style="background: linear-gradient(135deg, var(--accent-gold), #D97706); flex: 1;" onclick="window.addDestToBucketList('${dest.id}')">
-            <i class="fa-solid fa-bookmark"></i> Simpan Bucket List
+          <button class="btn-primary btn-secondary" style="flex: 1; min-width: 140px; background: linear-gradient(135deg, var(--mdc-accent-gold), #D97706);" onclick="window.addDestToBucketList('${dest.id}')">
+            <span class="material-icons-round">bookmark_add</span> Simpan Bucket List
           </button>
         </div>
       </div>
     `;
 
     closeAllModals();
-    modal.classList.add('active');
+    modals.destDetail.classList.add('active');
   };
 
   window.openGoogleMapsRoute = function(lat, lng) {
@@ -347,13 +429,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- 6. Hero Flow: Upload & AI Location Recognition ---
+  // =============================================
+  // 7. Hero Flow: Upload & AI Location Recognition
+  // =============================================
   function openUploadModal() {
     closeAllModals();
     modals.upload.classList.add('active');
   }
 
-  // Handle Photo Choice / Dropzone
   const photoOptions = document.querySelectorAll('.upload-sample-img');
   photoOptions.forEach(img => {
     img.addEventListener('click', () => {
@@ -380,7 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeAllModals();
     modals.radarScan.classList.add('active');
 
-    // Process image with EXIF & Visual AI Engine
     const result = await window.ExifAiEngine.analyzePhoto(imageSrc, fileObject);
     state.pendingUpload = {
       imageSrc: imageSrc,
@@ -400,19 +482,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (res.isHighCertainty) {
       body.innerHTML = `
-        <div style="text-align: center; padding: 10px;">
-          <img src="${upload.imageSrc}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 16px;">
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--primary-emerald); padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--primary-emerald); margin-bottom: 14px; font-size: 0.85rem;">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Confidence: ${res.primaryMatch.confidence}% (${res.primaryMatch.source})
+        <div style="text-align: center; padding: 8px 0;">
+          <img src="${upload.imageSrc}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 14px; margin-bottom: 16px;">
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--mdc-theme-primary); padding: 8px 16px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--mdc-theme-primary); margin-bottom: 16px; font-size: 0.85rem;">
+            <span class="material-icons-round" style="font-size: 1rem;">auto_fix_high</span>
+            AI Confidence: ${res.primaryMatch.confidence}% (${res.primaryMatch.source})
           </div>
-          <h3 style="font-size: 1.3rem; margin-bottom: 8px;">Apakah ini <span style="color: var(--primary-emerald);">${res.primaryMatch.dest.name}</span>?</h3>
-          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Sistem AI & metadata EXIF membaca kecocokan visual lokasi secara presisi.</p>
-
+          <h3 class="mdc-typography--headline6" style="margin-bottom: 10px;">Apakah ini <span style="color: var(--mdc-theme-primary);">${res.primaryMatch.dest.name}</span>?</h3>
+          <p class="mdc-typography--body2" style="color: var(--mdc-text-muted); margin-bottom: 20px;">Sistem AI & metadata EXIF membaca kecocokan visual lokasi secara presisi.</p>
           <div style="display: flex; gap: 12px;">
-            <button class="btn-primary" onclick="window.confirmLocationChoice('${res.primaryMatch.dest.id}')">
-              <i class="fa-solid fa-check"></i> Ya, Benar!
+            <button class="btn-primary" style="flex: 1;" onclick="window.confirmLocationChoice('${res.primaryMatch.dest.id}')">
+              <span class="material-icons-round">check_circle</span> Ya, Benar!
             </button>
-            <button class="btn-primary" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-main);" onclick="window.showCandidateOptions()">
+            <button class="btn-primary btn-secondary" style="flex: 1;" onclick="window.showCandidateOptions()">
               Ubah Lokasi
             </button>
           </div>
@@ -431,20 +513,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const candidates = upload.aiResult.allCandidates;
 
     body.innerHTML = `
-      <div style="padding: 10px;">
-        <h4 style="font-size: 1.1rem; margin-bottom: 12px;">Pilih Lokasi yang Sesuai:</h4>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">AI mendeteksi beberapa opsi tempat pariwisata yang cocok:</p>
+      <div style="padding: 4px 0;">
+        <h4 class="mdc-typography--subtitle1" style="margin-bottom: 10px;">Pilih Lokasi yang Sesuai:</h4>
+        <p class="mdc-typography--body2" style="color: var(--mdc-text-muted); margin-bottom: 16px;">AI mendeteksi beberapa opsi tempat pariwisata yang cocok:</p>
 
         ${candidates.map(c => `
           <div class="candidate-option" onclick="window.confirmLocationChoice('${c.dest.id}')">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="${c.dest.image}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+              <img src="${c.dest.image}" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover;">
               <div>
-                <div style="font-weight: 700; font-size: 0.95rem;">${c.dest.name}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">${c.dest.locationName}</div>
+                <div class="mdc-typography--subtitle2">${c.dest.name}</div>
+                <div class="mdc-typography--caption" style="color: var(--mdc-text-muted);">${c.dest.locationName}</div>
               </div>
             </div>
-            <div style="font-weight: 800; color: var(--primary-emerald); font-size: 0.9rem;">
+            <div style="font-weight: 800; color: var(--mdc-theme-primary); font-size: 0.9rem; white-space: nowrap;">
               ${c.confidence}% Match
             </div>
           </div>
@@ -456,7 +538,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.confirmLocationChoice = function(destId) {
     const dest = state.destinations.find(d => d.id === destId);
     if (!dest) return;
-
     state.pendingUpload.selectedDest = dest;
     renderPostFormModal();
   };
@@ -468,23 +549,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     body.innerHTML = `
       <form onsubmit="window.publishNewPost(event)">
-        <div style="display: flex; gap: 14px; margin-bottom: 16px;">
-          <img src="${upload.imageSrc}" style="width: 110px; height: 110px; border-radius: 12px; object-fit: cover;">
+        <div style="display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start;">
+          <img src="${upload.imageSrc}" style="width: 100px; height: 100px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">
           <div>
-            <div style="font-size: 0.8rem; color: var(--primary-emerald); font-weight: 700;"><i class="fa-solid fa-location-dot"></i> Terverifikasi:</div>
-            <h3 style="font-size: 1.1rem; font-weight: 800;">${dest.name}</h3>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">${dest.locationName}</span>
+            <div class="mdc-typography--caption" style="color: var(--mdc-theme-primary); font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+              <span class="material-icons-round" style="font-size: 0.9rem;">verified</span> Terverifikasi:
+            </div>
+            <div class="mdc-typography--subtitle1" style="font-weight: 800;">${dest.name}</div>
+            <div class="mdc-typography--caption" style="color: var(--mdc-text-muted);">${dest.locationName}</div>
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Berikan Rating:</label>
-          <div style="display: flex; gap: 8px; font-size: 1.4rem; color: var(--accent-gold); cursor: pointer;" id="starRatingPicker">
-            <i class="fa-solid fa-star" data-val="1"></i>
-            <i class="fa-solid fa-star" data-val="2"></i>
-            <i class="fa-solid fa-star" data-val="3"></i>
-            <i class="fa-solid fa-star" data-val="4"></i>
-            <i class="fa-solid fa-star" data-val="5"></i>
+          <div class="star-rating-row" id="starRatingPicker">
+            <span class="material-icons-round" data-val="1">star</span>
+            <span class="material-icons-round" data-val="2">star</span>
+            <span class="material-icons-round" data-val="3">star</span>
+            <span class="material-icons-round" data-val="4">star</span>
+            <span class="material-icons-round" data-val="5">star</span>
           </div>
           <input type="hidden" id="postRatingInput" value="5">
         </div>
@@ -495,20 +578,22 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <button type="submit" class="btn-primary">
-          <i class="fa-solid fa-paper-plane"></i> Publikasikan Postingan & Dapatkan Stamp
+          <span class="material-icons-round">send</span>
+          Publikasikan Postingan & Dapatkan Stamp
         </button>
       </form>
     `;
 
-    // Handle Star Rating Picker
-    const stars = document.querySelectorAll('#starRatingPicker i');
+    // Star Rating Picker
+    const stars = document.querySelectorAll('#starRatingPicker .material-icons-round');
     const ratingInput = document.getElementById('postRatingInput');
     stars.forEach((star, index) => {
       star.addEventListener('click', () => {
         const val = index + 1;
         ratingInput.value = val;
         stars.forEach((s, idx) => {
-          s.className = idx < val ? 'fa-solid fa-star' : 'fa-regular fa-star';
+          s.textContent = idx < val ? 'star' : 'star_border';
+          s.style.color = idx < val ? 'var(--mdc-accent-gold)' : '#CBD5E1';
         });
       });
     });
@@ -542,10 +627,8 @@ document.addEventListener('DOMContentLoaded', () => {
       comments: []
     };
 
-    // Add to state posts top
     state.posts.unshift(newPost);
 
-    // Update Digital Stamps & Visited Places
     if (!state.profile.visitedPlaces.includes(dest.id)) {
       state.profile.visitedPlaces.push(dest.id);
       state.profile.digitalStamps.push({
@@ -560,20 +643,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closeAllModals();
 
-    // Trigger Celebration Confetti if available
     if (typeof confetti === 'function') {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
 
     showToast(`🎉 Berhasil memposting! Stempel ${dest.name} telah ditambahkan ke Paspor Digital.`);
     switchTab('passport');
   };
 
-  // --- 7. Digital Passport Controller ---
+  // =============================================
+  // 8. Digital Passport Controller
+  // =============================================
   function renderPassport() {
     const container = document.getElementById('passportContainer');
     if (!container) return;
@@ -581,43 +661,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const prof = state.profile;
 
     container.innerHTML = `
-      <div class="passport-hero">
+      <div class="passport-hero mdc-card">
         <div class="passport-user-bar">
           <img src="${prof.avatar}" class="passport-avatar-big" alt="${prof.name}">
           <div class="passport-details">
             <h2>${prof.name}</h2>
-            <div style="font-size: 0.9rem; color: var(--primary-emerald); font-weight: 600;">${prof.handle} • ${prof.city}</div>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${prof.bio}</p>
+            <div class="mdc-typography--body2" style="color: var(--mdc-theme-primary); font-weight: 600; margin-top: 4px;">
+              ${prof.handle} • ${prof.city}
+            </div>
+            <p class="mdc-typography--body2" style="color: var(--mdc-text-muted); margin-top: 6px;">${prof.bio}</p>
           </div>
         </div>
 
         <div class="passport-stats">
-          <div class="stat-item">
+          <div class="stat-item mdc-card">
             <div class="stat-value">${prof.visitedPlaces.length}</div>
             <div class="stat-label">Destinasi Dikunjungi</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item mdc-card">
             <div class="stat-value">${prof.digitalStamps.length}</div>
             <div class="stat-label">Digital Stamps</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item mdc-card">
             <div class="stat-value">${prof.badges.filter(b => b.unlocked).length}</div>
             <div class="stat-label">Lencana Terbuka</div>
           </div>
-          <div class="stat-item">
+          <div class="stat-item mdc-card">
             <div class="stat-value">${prof.bucketList.length}</div>
             <div class="stat-label">Bucket List</div>
           </div>
         </div>
       </div>
 
+      <!-- Stamps -->
       <div style="margin-bottom: 32px;">
         <h3 class="stamps-section-title">
-          <i class="fa-solid fa-passport" style="color: var(--accent-gold);"></i> Koleksi Stempel Paspor Digital (${prof.digitalStamps.length})
+          <span class="material-icons-round">card_travel</span>
+          Koleksi Stempel Paspor Digital (${prof.digitalStamps.length})
         </h3>
         <div class="stamps-grid">
           ${prof.digitalStamps.map(s => `
-            <div class="stamp-card">
+            <div class="stamp-card mdc-card">
               <div class="stamp-icon">${s.icon}</div>
               <div class="stamp-name">${s.name}</div>
               <div class="stamp-date">${s.date}</div>
@@ -626,19 +710,21 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
 
+      <!-- Badges -->
       <div>
         <h3 class="stamps-section-title">
-          <i class="fa-solid fa-award" style="color: var(--primary-emerald);"></i> Lencana Prestasi (Badges)
+          <span class="material-icons-round" style="color: var(--mdc-theme-primary);">emoji_events</span>
+          Lencana Prestasi (Badges)
         </h3>
         <div class="badges-grid">
           ${prof.badges.map(b => `
-            <div class="badge-card ${b.unlocked ? '' : 'locked'}">
+            <div class="badge-card mdc-card ${b.unlocked ? '' : 'locked'}">
               <div class="badge-icon-box">${b.icon}</div>
               <div>
-                <div style="font-weight: 700; font-size: 0.95rem;">${b.name}</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">${b.description}</div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: ${b.unlocked ? 'var(--accent-gold)' : 'var(--text-dim)'}; margin-top: 4px;">
-                  ${b.unlocked ? 'UNLOCKED • ' + b.level : 'LOCKED'}
+                <div class="mdc-typography--subtitle2">${b.name}</div>
+                <div class="mdc-typography--caption" style="color: var(--mdc-text-muted);">${b.description}</div>
+                <div class="mdc-typography--caption" style="font-weight: 800; color: ${b.unlocked ? 'var(--mdc-accent-gold)' : 'var(--mdc-text-dim)'}; margin-top: 4px;">
+                  ${b.unlocked ? '✅ UNLOCKED • ' + b.level : '🔒 LOCKED'}
                 </div>
               </div>
             </div>
@@ -648,36 +734,39 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  // --- 8. Comment Modal Controller ---
+  // =============================================
+  // 9. Comment Modal Controller
+  // =============================================
   window.openCommentModal = function(postId) {
     const post = state.posts.find(p => p.id === postId);
     if (!post) return;
 
-    const modal = modals.comment;
     const body = document.getElementById('commentModalBody');
 
     body.innerHTML = `
-      <h3 style="font-size: 1.1rem; margin-bottom: 16px;">Komentar (${post.comments.length})</h3>
+      <h3 class="mdc-typography--subtitle1" style="margin-bottom: 16px;">Komentar (${post.comments.length})</h3>
       <div style="max-height: 250px; overflow-y: auto; margin-bottom: 16px;">
-        ${post.comments.length === 0 ? '<p style="color: var(--text-muted);">Belum ada komentar. Jadilah yang pertama!</p>' : ''}
+        ${post.comments.length === 0
+          ? '<p class="mdc-typography--body2" style="color: var(--mdc-text-muted);">Belum ada komentar. Jadilah yang pertama!</p>'
+          : ''}
         ${post.comments.map(c => `
-          <div style="background: rgba(255,255,255,0.04); padding: 10px 14px; border-radius: 10px; margin-bottom: 8px;">
-            <strong style="font-size: 0.85rem; color: var(--primary-emerald);">${c.user}:</strong>
-            <span style="font-size: 0.88rem; color: var(--text-main); margin-left: 6px;">${escapeHtml(c.text)}</span>
+          <div style="background: #F0F9FF; border: 1px solid #E0F2FE; padding: 10px 14px; border-radius: 12px; margin-bottom: 8px;">
+            <strong class="mdc-typography--caption" style="color: var(--mdc-theme-primary);">${c.user}:</strong>
+            <span class="mdc-typography--body2" style="margin-left: 6px;">${escapeHtml(c.text)}</span>
           </div>
         `).join('')}
       </div>
 
       <form onsubmit="window.submitComment(event, '${post.id}')" style="display: flex; gap: 8px;">
         <input type="text" class="form-input" id="newCommentInput" placeholder="Tulis komentar..." required style="flex: 1;">
-        <button type="submit" class="btn-primary" style="width: auto; padding: 0 18px;">
+        <button type="submit" class="btn-primary" style="width: auto; padding: 0 18px; flex-shrink: 0;">
           Kirim
         </button>
       </form>
     `;
 
     closeAllModals();
-    modal.classList.add('active');
+    modals.comment.classList.add('active');
   };
 
   window.submitComment = function(e, postId) {
@@ -685,47 +774,64 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('newCommentInput');
     const post = state.posts.find(p => p.id === postId);
     if (post && input.value.trim()) {
-      post.comments.push({
-        user: state.profile.name,
-        text: input.value.trim()
-      });
-      openCommentModal(postId);
+      post.comments.push({ user: state.profile.name, text: input.value.trim() });
+      window.openCommentModal(postId);
       renderFeed();
     }
   };
 
-  // --- Helpers ---
+  // =============================================
+  // 10. Helpers
+  // =============================================
   function closeAllModals() {
     Object.values(modals).forEach(m => {
       if (m) m.classList.remove('active');
     });
   }
 
+  // Close buttons on all modals
   document.querySelectorAll('.modal-close-btn').forEach(btn => {
     btn.addEventListener('click', closeAllModals);
   });
 
+  // Close on overlay click
+  Object.values(modals).forEach(modalEl => {
+    if (!modalEl) return;
+    modalEl.addEventListener('click', (e) => {
+      if (e.target === modalEl) closeAllModals();
+    });
+  });
+
+  // MDC Snackbar-based toast
   function showToast(msg) {
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-      background: rgba(17, 24, 39, 0.95); border: 1px solid var(--primary-emerald);
-      color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 600;
-      font-size: 0.9rem; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      animation: fadeIn 0.3s;
-    `;
-    toast.innerHTML = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3500);
+    const snackbar = window._mdcSnackbar;
+    if (snackbar) {
+      const label = document.getElementById('snackbarLabel');
+      if (label) label.textContent = msg;
+      snackbar.open();
+    } else {
+      // Fallback plain toast
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%);
+        background: rgba(17, 24, 39, 0.96); border: 1px solid var(--mdc-theme-primary);
+        color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 600;
+        font-size: 0.9rem; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        animation: fadeInView 0.3s; white-space: nowrap; max-width: 90vw; text-align: center;
+      `;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
   }
 
   function escapeHtml(str) {
-    return str.replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g,
       tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
   }
 
-  // Real-time Search Input Listener
+  // Real-time Search
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       state.searchQuery = e.target.value;
@@ -733,6 +839,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial Load
+  // =============================================
+  // 11. Initial Load
+  // =============================================
+  initMDC();
   renderFeed();
 });
