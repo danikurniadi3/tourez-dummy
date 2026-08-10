@@ -75,7 +75,7 @@ Aplikasi ini dibangun menggunakan arsitektur **Client-Side Pure Web**, sehingga 
 ### Opsi 1: Menjalankan Langsung via Browser
 1. *Clone* atau unduh repositori ini ke komputer Anda:
    ```bash
-   git clone https://github.com/username/tourez.git
+   git clone https://github.com/danikurniadi3/tourez-dummy.git
    ```
 2. Buka folder `tourez` dan klik ganda pada berkas `index.html` untuk membukanya di peramban (Chrome, Edge, Firefox, Safari, dll.).
 
