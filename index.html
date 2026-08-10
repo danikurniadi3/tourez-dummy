@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourEZ - Platform Media Sosial Pariwisata berbasis AI & Digital Passport</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description"
+    content="TourEZ menggabungkan media sosial pariwisata, pengenalan lokasi otomatis dengan AI & metadata EXIF, peta interaktif, serta gamifikasi Paspor Digital.">
+  <meta name="keywords"
+    content="TourEZ, Pariwisata, Media Sosial Travel, AI Location Detection, Landmark Recognition, Paspor Digital, Wisata Indonesia">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Leaflet CSS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- TourEZ Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <div id="app">
+    <!-- Top Header Bar -->
+    <header class="top-header">
+      <a class="brand-logo" onclick="location.reload()">
+        <div class="brand-icon">
+          <i class="fa-solid fa-compass"></i>
+        </div>
+        <span>TourEZ</span>
+      </a>
+
+      <div class="header-search">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" class="search-input"
+          placeholder="Cari tempat wisata, kota, atau hashtag...">
+      </div>
+
+      <div class="header-actions">
+        <div class="passport-pill" id="passportPill" title="Buka Paspor Digital">
+          <i class="fa-solid fa-passport"></i>
+          <span>5 Stamps</span>
+        </div>
+
+        <div class="user-avatar-btn" onclick="document.querySelector('[data-tab=passport]').click()"
+          title="Profil Dani Kurniadi">
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80"
+            alt="Dani Kurniadi">
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="main-nav">
+      <a class="nav-item active" data-tab="feed">
+        <i class="fa-solid fa-house"></i>
+        <span>Feed</span>
+      </a>
+      <a class="nav-item" data-tab="map">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Peta Wisata</span>
+      </a>
+      <a class="nav-item hero-btn" data-tab="post" title="Unggah Foto AI Landmark">
+        <i class="fa-solid fa-camera-retro"></i>
+        <span>Deteksi AI</span>
+      </a>
+      <a class="nav-item" data-tab="destinations">
+        <i class="fa-solid fa-location-dot"></i>
+        <span>Destinasi</span>
+      </a>
+      <a class="nav-item" data-tab="passport">
+        <i class="fa-solid fa-passport"></i>
+        <span>Paspor Saya</span>
+      </a>
+    </nav>
+
+    <!-- Main App Content -->
+    <main class="main-content">
+      <!-- VIEW 1: Travel Feed -->
+      <section id="viewFeed" class="tab-view active">
+        <div class="feed-header">
+          <div>
+            <h1 style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 800;">Eksplorasi Cerita
+              Perjalanan</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Temukan rekomendasi destinasi nyata yang
+              terverifikasi AI & pengunggah</p>
+          </div>
+
+          <div class="feed-tabs">
+            <button class="feed-tab-btn active" data-filter="trending">🔥 Trending</button>
+            <button class="feed-tab-btn" data-filter="nearby">📍 Terdekat</button>
+            <button class="feed-tab-btn" data-filter="following">👥 Following</button>
+          </div>
+        </div>
+
+        <div id="feedGrid" class="feed-grid">
+          <!-- Feed cards populated dynamically via app.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: Interactive Travel Map -->
+      <section id="viewMap" class="tab-view">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-family: var(--font-display); font-size: 1.5rem;">Peta Interaktif Foto & Destinasi</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Klik marker foto untuk melihat detail tempat wisata
+            dan ulasan pengunjung</p>
+        </div>
+        <div class="map-container-wrap">
+          <div id="leafletMap"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: Destinations Hub -->
+      <section id="viewDestinations" class="tab-view">
+        <div style="margin-bottom: 20px;">
+          <h2 style="font-family: var(--font-display); font-size: 1.5rem;">Direktori Destinasi Wisata Indonesia</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Informasi praktis, jam buka, tiket masuk, & tips
+            berkunjung</p>
+        </div>
+        <div id="destinationsGrid" class="destination-grid">
+          <!-- Populated dynamically via app.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 4: Digital Passport -->
+      <section id="viewPassport" class="tab-view">
+        <div id="passportContainer">
+          <!-- Populated dynamically via app.js -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL 1: Upload Photo Choose Modal -->
+  <div id="uploadModal" class="modal-overlay">
+    <div class="modal-container" style="padding: 24px;">
+      <button class="modal-close-btn">&times;</button>
+      <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 6px;">Unggah Foto & Deteksi Lokasi
+        AI</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Sistem akan membaca EXIF GPS atau
+        menggunakan Computer Vision untuk mengenali landmark visual secara otomatis.</p>
+
+      <div
+        style="border: 2px dashed var(--primary-emerald); border-radius: 16px; padding: 30px 20px; text-align: center; background: rgba(16, 185, 129, 0.05); margin-bottom: 20px;">
+        <i class="fa-solid fa-cloud-arrow-up"
+          style="font-size: 2.5rem; color: var(--primary-emerald); margin-bottom: 12px;"></i>
+        <h4 style="margin-bottom: 6px;">Pilih File Foto Perjalanan</h4>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Mendukung JPEG, PNG (Foto Kamera /
+          Galeri)</p>
+        <label class="btn-primary" style="display: inline-block; width: auto; padding: 10px 24px; cursor: pointer;">
+          <i class="fa-solid fa-folder-open"></i> Buka File
+          <input type="file" id="photoFileInput" accept="image/*" style="display: none;">
+        </label>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted);">
+        --- Atau Uji Coba Cepat Foto Sample AI Landmark ---
+      </div>
+
+      <div class="sample-grid-mobile" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <div style="text-align: center; cursor: pointer;">
+          <img src="https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=300&q=80"
+            class="upload-sample-img"
+            style="width: 100%; height: 75px; object-fit: cover; border-radius: 10px; border: 2px solid transparent;"
+            title="Candi Prambanan">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Prambanan</span>
+        </div>
+        <div style="text-align: center; cursor: pointer;">
+          <img src="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=300&q=80"
+            class="upload-sample-img"
+            style="width: 100%; height: 75px; object-fit: cover; border-radius: 10px; border: 2px solid transparent;"
+            title="Gunung Bromo">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Bromo</span>
+        </div>
+        <div style="text-align: center; cursor: pointer;">
+          <img src="https://images.unsplash.com/photo-1516690561799-46d8f74df9ab?auto=format&fit=crop&w=300&q=80"
+            class="upload-sample-img"
+            style="width: 100%; height: 75px; object-fit: cover; border-radius: 10px; border: 2px solid transparent;"
+            title="Raja Ampat">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Raja Ampat</span>
+        </div>
+        <div style="text-align: center; cursor: pointer;">
+          <img src="https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=300&q=80"
+            class="upload-sample-img"
+            style="width: 100%; height: 75px; object-fit: cover; border-radius: 10px; border: 2px solid transparent;"
+            title="Monas Jakarta">
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Monas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Radar Scan AI Processing Modal -->
+  <div id="radarScanModal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 420px; padding: 20px;">
+      <div class="radar-container">
+        <div class="radar-spinner">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px;">Memindai Landmark & EXIF...</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Menganalisis koordinat GPS & ciri visual foto dengan AI
+          Model.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Location Confirmation & Post Form Modal -->
+  <div id="locationConfirmModal" class="modal-overlay">
+    <div class="modal-container" style="padding: 24px;">
+      <button class="modal-close-btn">&times;</button>
+      <div id="locationConfirmBody">
+        <!-- Content populated via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Destination Detail Modal -->
+  <div id="destDetailModal" class="modal-overlay">
+    <div class="modal-container" style="padding: 0; overflow: hidden;">
+      <button class="modal-close-btn" style="z-index: 10;">&times;</button>
+      <div id="destDetailBody">
+        <!-- Populated via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Comments Modal -->
+  <div id="commentModal" class="modal-overlay">
+    <div class="modal-container" style="padding: 24px; max-width: 480px;">
+      <button class="modal-close-btn">&times;</button>
+      <div id="commentModalBody">
+        <!-- Populated via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- External JavaScript Libraries -->
+  <!-- ExifJS for client-side JPEG EXIF metadata extraction -->
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+  <!-- Canvas Confetti for Stamp celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <!-- Leaflet JS for Interactive Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- TourEZ Application Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/exifAiEngine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
