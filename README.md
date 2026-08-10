@@ -102,12 +102,6 @@ Untuk performa terbaik saat memuat modul media dan skrip:
 
 ---
 
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah [MIT License](LICENSE). Bebas digunakan dan dikembangkan kembali untuk keperluan edukasi, portofolio, maupun pengembangan komersial.
-
----
-
 <p center align="center">
   Dibuat dengan ❤️ untuk Memajukan Pariwisata & Ekonomi Kreatif Indonesia.
 </p>
